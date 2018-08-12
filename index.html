@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>PayMaya Wallet Tester</title>
+            
+
+    </head>
+    <body>
+        <h1>
+            PayMaya Wallet API Tester
+        </h1>
+        <a href="https://connect-sb-issuing.paymaya.com/authorize?client_id=ramon-test&response_type=code&redirect_uri=http://localhost/callback"> 
+            Authorize
+        </a>
+        <br>
+        <br>
+        
+        <div>
+            <h3>
+                User Details Test:
+            </h3>
+
+            <button type="button" onclick="getUserDetails()">
+                Get User details
+            </button>
+            
+            <button type="button" onclick="getUserBalance()">
+                Get User balance
+            </button>
+    
+            <button type="button" onclick="responseText.innerHTML = ''">
+                Clear
+            </button>
+
+            <h4>
+                Response
+            </h4>
+            <p id="responseText"></p>
+        </div>
+
+        <br>
+
+        <div>
+            <h3>
+                Shop Test:
+            </h3>
+
+            Product ID:
+            <input type="text" id="itemID">
+            <button type="button" onclick="buyItem()">
+                Search
+            </button>
+
+            <button type="button" onclick="confirmPurchase()">
+                Confirm Purchase
+            </button>
+
+            <br>
+            <br>
+
+            <button type="button" onclick="getProductCatalog()">
+                Get Product List
+            </button>
+            <button type="button" onclick="shopList.innerHTML = ''">
+                Clear
+            </button>
+        
+            <h4>
+                Response
+            </h4>
+
+            <p id="shopList"></p>
+        </div>
+
+        <br>
+
+        <div>
+
+            <h3>
+                Billing test:
+            </h3>
+
+
+            Biller Slug:
+            <input type="text" id="billerID">
+            <button type="button" onclick="payBill()">
+                Pay Bill
+            </button>
+
+            <button type="button" onclick="confirmPayment()">
+                Confirm Payment
+            </button>
+
+            <br>
+            <br>
+
+            <button type="button" onclick="getBillers()">
+                Get Billers
+            </button>
+
+            <button type="button" onclick="billerList.innerHTML = ''">
+                Clear
+            </button>
+
+            <h4>
+                Response
+            </h4>
+            <p id="billerList"></p>
+        </div>
+
+        <br>
+
+        <div>
+                <h3>
+                    Money Transfer Test:
+                </h3>
+
+                Phone Number/Alias:<br>
+                <input align="right" type="text" id="alias">
+                <br>
+                Amount:<br>
+                <input align="right" type="text" id="amount">
+                <br>
+                Note:<br>
+                <input align="right" type="text" id="note">
+
+                <br>
+                <br>
+                
+                <button type="button" onclick="sendMoney()">
+                    Send Money
+                </button>
+                <button type="button" onclick="confirmTransfer()">
+                    Confirm Transfer
+                </button>
+                <button type="button" onclick="cancelTransfer()">
+                    Cancel Transfer
+                </button>
+
+        
+                <button type="button" onclick="responseText.innerHTML = ''">
+                    Clear
+                </button>
+    
+                <h4>
+                    Response
+                </h4>
+                <p id="transferResponse"></p>
+            </div>
+
+        <script>
+                const responseTextBox = document.getElementById("responseText");
+                const shopList = document.getElementById("shopList");
+                const billerList = document.getElementById("billerList");
+                const transferResponse = document.getElementById("transferResponse");
+
+                const shopInput = document.getElementById("itemID");
+                const billingInput = document.getElementById("billerID");
+
+                const aliasInput = document.getElementById("alias");
+                const amountInput = document.getElementById("amount");
+                const noteInput = document.getElementById("note");
+
+                var productID;
+                var transferID;
+                var billerID;
+        
+                document.onload = function(){
+                    // getShopList();
+                    // Make the authorization automized.
+                }
+
+                function makeGetRequest(link, body){
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', link, false);
+                    xhr.setRequestHeader("Content-Type", "application/json");
+                    xhr.send(JSON.stringify(body));
+                    return JSON.parse(xhr.responseText);
+                }
+                function getUserDetails(){
+                    responseTextBox.innerHTML = makeGetRequest('http://localhost/user', null);
+                }
+
+                
+                function getUserBalance(){
+                    responseTextBox.innerHTML = makeGetRequest('http://localhost/balance', null);
+                }
+
+                function sendMoney(){
+                    var alias = aliasInput.value;
+                    var amount = amountInput.value;
+                    var note = noteInput.value;
+                    if(alias == '' || amount == ''){
+                        transferResponse.innerHTML = 'The Alias and Amount fields are required.'
+                        return;
+                    }
+                    var body = {
+                        "type": "transfer",
+                        "alias": alias,
+                        "amount": amount,
+                        "note":note
+                    }
+
+                    var response = makeGetRequest('http://localhost/transfer', body);
+
+                    transferID = response.transferID;
+
+                    var responseText = 'PHP' + amount + ' has been sent to the Number/Alias ' + alias 
+                    + ' with the note: \n\n"' + note; + '"';
+                    transferResponse.innerHTML = responseText + '\n\n' + response;
+                }
+
+                function confirmTransfer(){
+                    if(transferID == null){
+                        transferResponse.innerHTML  = "No transfer request has been made."
+                        return;
+                    }
+                    transferResponse.innerHTML = makeGetRequest('http://localhost/confirm?type=transfer&alias=' + transferID, null);
+                }
+
+                function cancelTransfer(){
+                    if(transferID == null){
+                        transferResponse.innerHTML  = "No transfer request has been made."
+                        return;
+                    }
+                    transferResponse.innerHTML = makeGetRequest('http://localhost/cancel?type=transfer&alias=' + transferID, null);
+                }
+
+                function getProductCatalog(){
+                    shopList.innerHTML = makeGetRequest('http://localhost/productCatalog', null);
+                }
+
+                function buyItem(){
+                    // Send the Item ID as a url parameter.
+                }
+
+                function confirmPurchase(){
+                    if(productID == null){
+                        shopList.innerHTML = "No Item Selected."
+                        return;
+                    }
+
+                }
+
+                function cancelPurchase(){
+                    if(productID == null){
+                        shopList.innerHTML  = "No Item Selected."
+                        return;
+                    }
+
+                }
+
+                function getBillers(){
+                    billerList.innerHTML = makeGetRequest('http://localhost/billers', null);
+                }
+
+                function payBill(){
+                    responseTextBox.innerHTML = makeGetRequest('http://localhost/billPayment', null);
+                }
+
+                function confirmPayment(){
+                    if(billerID == null){
+                        billerList.innerHTML  = "No Biller ID Selected."
+                        return;
+                    }
+
+                }
+
+                function cancelPayment(){
+                    if(billerID == null){
+                        billerList.innerHTML  = "No Biller ID Selected."
+                        return;
+                    }
+
+                }
+        </script>
+    </body>
+</html>
