@@ -77,9 +77,9 @@ app.put('/confirm', function(req,res){
     }else if(type == 'payment'){
         //TODO: TEST
         // Executes a bill payment.
-        var billPaymentID = req.body.paymentID;
-        console.log('Confirming payment to the Biller ID: ' + billPaymentID);
-        request = '/billpayment/' + billPaymentID + '/execute';
+        var billerID = req.body.billerID;
+        console.log('Confirming payment to the Biller ID: ' + billerID);
+        request = '/billpayment/' + billerID + '/execute';
         makeRequest('POST', request,res,true,'Payment_Request_Confirmation', null, false);
     }
 });
@@ -87,18 +87,17 @@ app.put('/confirm', function(req,res){
 /**
  * Cancels an initiated Transaction.
  */
-app.get('/cancel', function(req,res){
+app.post('/cancel', function(req,res){
     var alias = req.body.alias;
     var request = '/transfer/' + alias;        
-    makeRequest('DELETE',request, res, false, 'Transfer_Request', body, false);
+    makeRequest('DELETE',request, res, false, 'Transfer_Request', null, false);
 });
 
 app.get('/productCatalog', function(req,res){
     makeRequest('GET','/shop/products', res, false, 'Retrieve_Catalog', null, false);
 });
 
-app.get('/purchase', function(req,res){
-
+app.post('/purchase', function(req,res){
     //TODO: Test this.
     var body = {
         "purchaseId": req.body.purchaseId,
@@ -108,11 +107,13 @@ app.get('/purchase', function(req,res){
 
 });
 
+// Requests and sends the list of all the billers.
 app.get('/billers', function(req,res){
-    makeRequest('GET','/billers', res, true, 'Get_Billers', null, false);
+    makeRequest('GET','/billers', res, true, 'Get_Billers', null, true);
 });
 
-app.get('/billPayment', function(req,res){
+// Makes a P100 payment to a biller.
+app.post('/payBill', function(req,res){
     //TODO: Update the body object and make sure it works.
     var billerID = req.body.billerID
     var body =  {
@@ -120,14 +121,6 @@ app.get('/billPayment', function(req,res){
         "amount": {
             "currency": "PHP",
             "value": 100,
-        },
-        "fields": {
-            "AccountNumber": "770768887403",
-            "PhoneNumber": "+639399242169"
-        },
-        "notify": {
-            "url": "http://localhost/notifyBill",
-            "meta": {}
         }
     }
     makeRequest('POST','/billpayment', res, true, 'Init_billpayment', body, false);

@@ -155,11 +155,6 @@
                 const shopInput = document.getElementById("itemID");
                 const billingInput = document.getElementById("billerID");
 
-                const aliasInput = document.getElementById("alias");
-                const amountInput = document.getElementById("amount");
-                const noteInput = document.getElementById("note");
-
-                var productID;
                 var transferID;
                 var billerID;
         
@@ -185,19 +180,27 @@
                     }
                 }
 
+                /**
+                 * Gets the details of a user.
+                 */
                 function getUserDetails(){
                     responseTextBox.innerHTML = makeRequest('GET','http://localhost/user', null);
                 }
 
-                
+                /**
+                 * Gets the balance details of a user.
+                 */
                 function getUserBalance(){
                     responseTextBox.innerHTML = makeRequest('GET','http://localhost/balance', null);
                 }
 
+                /**
+                 * Initiates a money transfer to another PayMaya user.
+                 */
                 function sendMoney(){
-                    var alias = aliasInput.value;
-                    var amount = amountInput.value;
-                    var note = noteInput.value;
+                    var alias = document.getElementById("alias").value;
+                    var amount = document.getElementById("amount").value;
+                    var note = document.getElementById("note").value;
                     if(alias == '' || amount == ''){
                         transferResponse.innerHTML = 'The Alias and Amount fields are required.'
                         return;
@@ -222,6 +225,9 @@
                     }
                 }
 
+                /**
+                 * Confirms an existing transfer based off its ID.
+                 */
                 function confirmTransfer(){
                     if(transferID == null){
                         transferResponse.innerHTML  = "No transfer request has been made."
@@ -233,7 +239,10 @@
                     }
                     transferResponse.innerHTML = makeRequest('PUT','http://localhost/confirm', body);
                 }
-
+                
+                /**
+                 * Cancels a transfer that has recently been confirmed.
+                 */
                 function cancelTransfer(){
                     if(transferID == null){
                         transferResponse.innerHTML  = "No transfer request has been made."
@@ -242,32 +251,64 @@
                     var body = {
                         "alias": transferID
                     }
-                    transferResponse.innerHTML = makeRequest('GET','http://localhost/cancel', body);
+                    
+                    transferResponse.innerHTML = makeRequest('POST','http://localhost/cancel', body);
                 }
 
+                /**
+                 * Gets an entire product catalog.
+                 */
                 function getProductCatalog(){
                     shopList.innerHTML = makeRequest('GET','http://localhost/productCatalog', null);
                 }
 
+                /**
+                 * Buys a specified item.
+                 */
                 function buyItem(){
                     //TODO: Implement
                     // Send the Item ID as a url parameter.
+                    var productID = document.getElementById("itemID");
+                    var purchaseID = document.getElementById("purchaseID");
+                    var body = {
+                        "productID": productID,
+                        "purchaseID": purchaseID
+                    }
+                    shopList.innerHTML = makeRequest('POST','http://localhost/purchase', body);
                 }
 
+                /**
+                 * Gets a list of all the billers.
+                 */
                 function getBillers(){
                     billerList.innerHTML = makeRequest('GET','http://localhost/billers', null);
                 }
 
+                /**
+                 * Creates a P100 payment to a specified biller.
+                 */
                 function payBill(){
                     //TODO: Get the Biller ID and create an object to send back to the server.
-                    responseTextBox.innerHTML = makeRequest('GET','http://localhost/billPayment', null);
+                    billerID = document.getElementById("billerID")
+                    var body = {
+                        "billerID": billerID
+                    }
+                    billerList.innerHTML = makeRequest('POST','http://localhost/payBill', body);
                 }
 
+                /**
+                 * Confirms an existing payment.
+                 */
                 function confirmPayment(){
                     if(billerID == null){
                         billerList.innerHTML  = "No Biller ID Selected."
                         return;
                     }
+                    var body = {
+                        "type": "payment",
+                        "billerID":billerID
+                    }
+                    billerList.innerHTML = makeRequest('PUT', 'http://localhost/confirm', body);
 
                 }
         </script>
