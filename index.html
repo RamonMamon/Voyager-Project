@@ -46,19 +46,18 @@
                 Shop Test:
             </h3>
 
-            Product ID:
+            Product ID: <br>
             <input type="text" id="itemID">
+            <br>
+            Purchase ID: <br>
+            <input type="text" id="purchaseID">
+
+            <br>
+            <br>
+
             <button type="button" onclick="buyItem()">
-                Search
+                Purchase Item
             </button>
-
-            <button type="button" onclick="confirmPurchase()">
-                Confirm Purchase
-            </button>
-
-            <br>
-            <br>
-
             <button type="button" onclick="getProductCatalog()">
                 Get Product List
             </button>
@@ -137,8 +136,6 @@
                 <button type="button" onclick="cancelTransfer()">
                     Cancel Transfer
                 </button>
-
-        
                 <button type="button" onclick="responseText.innerHTML = ''">
                     Clear
                 </button>
@@ -171,20 +168,30 @@
                     // Make the authorization automized.
                 }
 
-                function makeGetRequest(link, body){
+                /**
+                 * This function returns the response from the server in the form of a string..
+                 */
+                function makeRequest(requestType, link, body){
                     var xhr = new XMLHttpRequest();
-                    xhr.open('GET', link, false);
+                    xhr.open(requestType, link, false);
                     xhr.setRequestHeader("Content-Type", "application/json");
                     xhr.send(JSON.stringify(body));
-                    return JSON.parse(xhr.responseText);
+                    var response = (xhr.responseText);
+
+                    if(response.error == null){
+                        return response;
+                    }else{
+                        return response.error;
+                    }
                 }
+
                 function getUserDetails(){
-                    responseTextBox.innerHTML = makeGetRequest('http://localhost/user', null);
+                    responseTextBox.innerHTML = makeRequest('GET','http://localhost/user', null);
                 }
 
                 
                 function getUserBalance(){
-                    responseTextBox.innerHTML = makeGetRequest('http://localhost/balance', null);
+                    responseTextBox.innerHTML = makeRequest('GET','http://localhost/balance', null);
                 }
 
                 function sendMoney(){
@@ -202,13 +209,17 @@
                         "note":note
                     }
 
-                    var response = makeGetRequest('http://localhost/transfer', body);
+                    var response = JSON.parse(makeRequest('POST','http://localhost/transfer', body));
 
-                    transferID = response.transferID;
+                    transferID = response.transferId;       
 
                     var responseText = 'PHP' + amount + ' has been sent to the Number/Alias ' + alias 
-                    + ' with the note: \n\n"' + note; + '"';
-                    transferResponse.innerHTML = responseText + '\n\n' + response;
+                    + ' with the note: \n\n"' + note + '"';
+                    if(transferID == null){
+                        transferResponse.innerHTML = "An error has occurred completing request.\n\n" + response.error.description;
+                    }else{
+                        transferResponse.innerHTML = responseText;
+                    }
                 }
 
                 function confirmTransfer(){
@@ -216,7 +227,11 @@
                         transferResponse.innerHTML  = "No transfer request has been made."
                         return;
                     }
-                    transferResponse.innerHTML = makeGetRequest('http://localhost/confirm?type=transfer&alias=' + transferID, null);
+                    var body = {
+                        "type": "transfer",
+                        "alias": transferID
+                    }
+                    transferResponse.innerHTML = makeRequest('PUT','http://localhost/confirm', body);
                 }
 
                 function cancelTransfer(){
@@ -224,50 +239,31 @@
                         transferResponse.innerHTML  = "No transfer request has been made."
                         return;
                     }
-                    transferResponse.innerHTML = makeGetRequest('http://localhost/cancel?type=transfer&alias=' + transferID, null);
+                    var body = {
+                        "alias": transferID
+                    }
+                    transferResponse.innerHTML = makeRequest('GET','http://localhost/cancel', body);
                 }
 
                 function getProductCatalog(){
-                    shopList.innerHTML = makeGetRequest('http://localhost/productCatalog', null);
+                    shopList.innerHTML = makeRequest('GET','http://localhost/productCatalog', null);
                 }
 
                 function buyItem(){
+                    //TODO: Implement
                     // Send the Item ID as a url parameter.
                 }
 
-                function confirmPurchase(){
-                    if(productID == null){
-                        shopList.innerHTML = "No Item Selected."
-                        return;
-                    }
-
-                }
-
-                function cancelPurchase(){
-                    if(productID == null){
-                        shopList.innerHTML  = "No Item Selected."
-                        return;
-                    }
-
-                }
-
                 function getBillers(){
-                    billerList.innerHTML = makeGetRequest('http://localhost/billers', null);
+                    billerList.innerHTML = makeRequest('GET','http://localhost/billers', null);
                 }
 
                 function payBill(){
-                    responseTextBox.innerHTML = makeGetRequest('http://localhost/billPayment', null);
+                    //TODO: Get the Biller ID and create an object to send back to the server.
+                    responseTextBox.innerHTML = makeRequest('GET','http://localhost/billPayment', null);
                 }
 
                 function confirmPayment(){
-                    if(billerID == null){
-                        billerList.innerHTML  = "No Biller ID Selected."
-                        return;
-                    }
-
-                }
-
-                function cancelPayment(){
                     if(billerID == null){
                         billerList.innerHTML  = "No Biller ID Selected."
                         return;

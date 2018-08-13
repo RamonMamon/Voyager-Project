@@ -22,7 +22,7 @@ var refresh_token;
 //These are static directories for the webpage to access.
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+// app.use(bodyParser.urlencoded({extended: true}));
 
 /**
  * Sends the index.html file to the client.
@@ -33,145 +33,104 @@ app.get('/callback', retrieveCallbackInfo);
 
 
 app.get('/user', function(req, res){
-    if(access_token != null){
-        // Make the /user call of the PayMaya API retrieving the information of the user.
-        makeRequest("GET","/profile", res, false, 'Profile_Request', null, false);
-    }else{
-        missingAccTok(res);
-    }
+    // Make the /user call of the PayMaya API retrieving the information of the user.
+    makeRequest("GET","/profile", res, false, 'Profile_Request', null, false);
 });
 
 app.get('/balance', function(req, res){
-    if(access_token != null){
-        // Make the /balance call and send the balance to the html file.
-        makeRequest("GET","/balance", res, true, 'Balance_Request', null, false)
-    }else{
-        missingAccTok(res);
-    }
+    // Make the /balance call and send the balance to the html file.
+    makeRequest("GET","/balance", res, true, 'Balance_Request', null, false)
 });
 
-app.get('/transfer', function(req,res){
-    if(access_token != null){
-        // Initiate the transfer of money.
+app.post('/transfer', function(req,res){
+    // Initiate the transfer of money.
+    console.log('Received transfer request with the body: ');
+    console.log(req.body);
+    var alias = req.body.alias;
+    var amount = req.body.amount;
+    var note = req.body.note;
+    
+    var body = {
+        "recipient": {
+            "type": "PAYMAYA",
+            "value": alias
+        },
+        "amount": {
+            "currency": "PHP",
+            "value": amount
+        },
+        "note": note
+        }
+
+    makeRequest('POST','/transfer', res, true, 'Transfer_Request', body, false);
+});
+
+app.put('/confirm', function(req,res){
+    
+    var type = req.body.type;
+    var request;
+    if(type == 'transfer'){
         var alias = req.body.alias;
-        var amount = req.body.amount;
-        var note = req.body.note;
-        console.log(JSON.parse(req.body));
-
-        var body = {
-            "recipient": {
-              "type": "PAYMAYA",
-              "value": alias
-            },
-            "amount": {
-              "currency": "PHP",
-              "value": amount
-            },
-            "note": note
-          }
-
-        makeRequest('POST','/transfer', res, true, 'Transfer_Request', body, false);
-    }else{
-        missingAccTok(res);
+        console.log('Confirming transfer request with the ID: ' + alias);
+        request = '/transfer/' + alias + '/execute';
+        makeRequest('PUT',request, res, false, 'Transfer_Request', null, false);
+    }else if(type == 'payment'){
+        //TODO: TEST
+        // Executes a bill payment.
+        var billPaymentID = req.body.paymentID;
+        console.log('Confirming payment to the Biller ID: ' + billPaymentID);
+        request = '/billpayment/' + billPaymentID + '/execute';
+        makeRequest('POST', request,res,true,'Payment_Request_Confirmation', null, false);
     }
 });
 
-app.get('/confirm', function(req,res){
-    // Money Transfer
-    // Purchase
-    // Biller Payment
-    if(access_token != null){
-        var type = req.body.type;
-        console.log(req.body);
-        var request;
-        if(type == 'transfer'){
-            var alias = req.body.alias;
-            request = '/transfer/' + alias + '/execute';
-            makeRequest('PUT',request, res, false, 'Transfer_Request', null, false);
-        }else if(type == 'purchase'){
-
-        }else if(type == 'payment'){
-
-        }
-
-    }else{
-        missingAccTok(res);
-    }
-});
-
+/**
+ * Cancels an initiated Transaction.
+ */
 app.get('/cancel', function(req,res){
-    if(access_token != null){
-        var type = req.query.type;
-        var request;
-        if(type == 'transfer'){
-            var alias = req.query.alias;
-            request = '/transfer/' + alias;
-            makeRequest('DELETE',request, res, false, 'Transfer_Request', body, false);
-        }else if(type == 'purchase'){
-
-        }else if(type == 'payment'){
-
-        }
-
-    }else{
-        missingAccTok(res);
-    }
+    var alias = req.body.alias;
+    var request = '/transfer/' + alias;        
+    makeRequest('DELETE',request, res, false, 'Transfer_Request', body, false);
 });
 
 app.get('/productCatalog', function(req,res){
-    if(access_token != null){
-        makeRequest('GET','/shop/products', res, false, 'Retrieve_Catalog', null, false);
-    }else{
-        missingAccTok(res);
-    }
-
+    makeRequest('GET','/shop/products', res, false, 'Retrieve_Catalog', null, false);
 });
 
 app.get('/purchase', function(req,res){
-    if(access_token != null){
-        var body = {
-            // "purchaseId":
+
+    //TODO: Test this.
+    var body = {
+        "purchaseId": req.body.purchaseId,
+        "productId": req.body.productId
         }
-        makeRequest('GET','/shop/products', res, false, 'Retrieve_Catalog', null, false);
-    }else{
-        missingAccTok(res);
-    }
+    makeRequest('POST','/shop/purchase', res, true, 'Retrieve_Catalog', body, false);
 
 });
 
 app.get('/billers', function(req,res){
-    if(access_token != null){
-        makeRequest('GET','/billers', res, true, 'Get_Billers', null, true);
-    }else{
-        missingAccTok(res);
-    }
+    makeRequest('GET','/billers', res, true, 'Get_Billers', null, false);
 });
 
 app.get('/billPayment', function(req,res){
-    if(access_token != null){
-        var body =  {
-            "biller": "pldt",
-            "amount": {
-                "currency": "PHP",
-                "value": 100,
-            },
-            "fields": {
-                "AccountNumber": "770768887403",
-                "PhoneNumber": "+639399242169"
-            },
-            "notify": {
-                "url": "http://localhost/notifyBill",
-                "meta": {}
-            }
+    //TODO: Update the body object and make sure it works.
+    var billerID = req.body.billerID
+    var body =  {
+        "biller": billerID,
+        "amount": {
+            "currency": "PHP",
+            "value": 100,
+        },
+        "fields": {
+            "AccountNumber": "770768887403",
+            "PhoneNumber": "+639399242169"
+        },
+        "notify": {
+            "url": "http://localhost/notifyBill",
+            "meta": {}
         }
-        makeRequest('POST','/billpayment', res, true, 'Init_billpayment', body, false);
-    }else{
-        missingAccTok(res);
     }
-});
-
-app.get('/payBill', function(req,res){
-
+    makeRequest('POST','/billpayment', res, true, 'Init_billpayment', body, false);
 });
 
 /**
@@ -186,33 +145,39 @@ app.get('/payBill', function(req,res){
  * @param {boolean} isJson Determines whether to include a json content type header.
  * @param {String} requestNo Will be used to verify and retrieve request information by PayMaya
  * @param {Object} body Is the Request body.
- * @param {boolean} basicAuth Determines whether or not to use basic-auth authorization or an Access token.
+ * @param {boolean} basicAuth Determines whether or not to use basic-auth authorization. If false, an access token will be used instead.
  */
 function makeRequest(requestType, endpoint, res, isJson, requestNo, body, basicAuth){
-    var request = new XMLHttpRequest();
-    request.open(requestType, "https://api-test.paymaya.com/external-api-sandbox/v1/" + endpoint,false);
-    if(isJson){
-        request.setRequestHeader('Content-Type', 'application/json');
-    }
+    // Checks if the User is authenticated with an access token.
+    if(access_token != null){
+        var request = new XMLHttpRequest();
+        request.open(requestType, "https://api-test.paymaya.com/external-api-sandbox/v1/" + endpoint,false);
+        if(isJson){
+            request.setRequestHeader('Content-Type', 'application/json');
+        }
 
-    // Authentication varies between basic authentication or access token.
-    if(basicAuth) request.setRequestHeader('Authorization', 'Basic ' + base64Auth);
-    else request.setRequestHeader('Authorization', 'Bearer ' + access_token);
+        // Authentication varies between basic authentication or access token.
+        if(basicAuth) request.setRequestHeader('Authorization', 'Basic ' + base64Auth);
+        else request.setRequestHeader('Authorization', 'Bearer ' + access_token);
 
-    // The required Reference number of each request made to the PayMaya API.
-    request.setRequestHeader('Request-Reference-No', requestNo);
+        // The required Reference number of each request made to the PayMaya API.
+        request.setRequestHeader('Request-Reference-No', requestNo);
 
-    request.send(JSON.stringify(body));
+        request.send(JSON.stringify(body));
 
-    // The response sent to the client which made the request.
-    res.json(request.responseText);
-    
-    console.log("\nRequest Status returned as " + request.status);
-    if(request.status == 200 || request.status == 201){
-        console.log("Access to endpoint " + endpoint + " was successful.");
+        // The response sent to the client which made the request.
+        res.send(request.responseText);
+        res.status(request.status);
+        
+        console.log("\nRequest Status returned as " + request.status);
+        if(request.status == 200 || request.status == 201){
+            console.log("Access to endpoint " + endpoint + " was successful.");
+        }else{
+            console.log("An error has occurred.")
+            console.log("Please check the returned response on the client.");
+        }
     }else{
-        console.log("An error has occurred.")
-        console.log("Please check the returned response on the client.");
+        missingAccTok(res);
     }
 }
 
@@ -224,6 +189,9 @@ function makeRequest(requestType, endpoint, res, isJson, requestNo, body, basicA
  * Create my own way to track the transaction history of an account.
  */
 
+ /**
+  * Sends the Default index page.
+  */
 function sendIndex(req,res){
     console.log('Request Type: ', req.method);
     res.status(OK);
@@ -231,6 +199,12 @@ function sendIndex(req,res){
 
 }
 
+/**
+ * Retrieves the required tokens and information from the callback page.
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ */
 function retrieveCallbackInfo(req,res){
     res.sendFile(path.join(__dirname,'./index.html'));
     let code = req.query.code;
