@@ -6,17 +6,21 @@
             
 
     </head>
-    <body>
+    <body >
         <h1>
             PayMaya Wallet API Tester
         </h1>
-        <a href="https://connect-sb-issuing.paymaya.com/authorize?client_id=ramon-test&response_type=code&redirect_uri=http://localhost/callback"> 
-            Authorize
-        </a>
-        <br>
-        <br>
-        
         <div>
+            <h3>
+                Authentication:
+            </h3>
+            <button type="button" onclick="authenticate()"> 
+                Authenticate
+            </button>
+            <button type="button" onclick="logout()"> 
+                Logout
+            </button>
+
             <h3>
                 User Details Test:
             </h3>
@@ -43,13 +47,43 @@
 
         <div>
             <h3>
+                KYC Test:
+            </h3>
+
+            <button type="button" onclick="getFields()">
+                Get Fields
+            </button>
+            <button type="button" onclick="uploadFile()">
+                Upload
+            </button>
+            <button type="button" onclick="submitApplication()">
+                Submit Mock Application
+            </button>
+            <button type="button" onclick="status()">
+                Status
+            </button>
+            <button type="button" onclick="kycResponse.innerHTML = ''">
+                Clear
+            </button>
+            <h4>
+                Response
+            </h4>
+            <p id="kycResponse"></p>
+        </div>
+
+        <br>
+
+        <div>
+            <h3>
                 Shop Test:
             </h3>
 
-            Product ID: <br>
+            Product ID:<br>
+            (ID of the Product)<br>
             <input type="text" id="itemID">
             <br>
-            Purchase ID: <br>
+            Purchase ID:<br> 
+            (A client Generated ID using the UUID v4 format)<br>
             <input type="text" id="purchaseID">
 
             <br>
@@ -80,9 +114,9 @@
                 Billing test:
             </h3>
 
-
-            Biller Slug:
-            <input type="text" id="billerID">
+            <label>This test makes a payment to the biller, "Laguna Water", using the slug, "LAGUNAWATER".</label>
+            <br>
+            <br>
             <button type="button" onclick="payBill()">
                 Pay Bill
             </button>
@@ -90,9 +124,6 @@
             <button type="button" onclick="confirmPayment()">
                 Confirm Payment
             </button>
-
-            <br>
-            <br>
 
             <button type="button" onclick="getBillers()">
                 Get Billers
@@ -151,16 +182,24 @@
                 const shopList = document.getElementById("shopList");
                 const billerList = document.getElementById("billerList");
                 const transferResponse = document.getElementById("transferResponse");
+                const kycResponse = document.getElementById("kycResponse");
 
                 const shopInput = document.getElementById("itemID");
                 const billingInput = document.getElementById("billerID");
 
                 var transferID;
-                var billerID;
-        
-                document.onload = function(){
-                    // getShopList();
-                    // Make the authorization automized.
+                var paymentBillerID;
+
+                /**
+                 * Brings the user to the login page then returns him to the redirect_uri once
+                 * he is finished logging in.
+                 */
+                function authenticate(){
+                    window.location.href = "https://connect-sb-issuing.paymaya.com/authorize?client_id=ramon-test&response_type=code&redirect_uri=http://localhost/callback";
+                }
+
+                function logout(){
+                    window.location.href = "https://connect-sb-issuing.paymaya.com/logout";
                 }
 
                 /**
@@ -169,7 +208,9 @@
                 function makeRequest(requestType, link, body){
                     var xhr = new XMLHttpRequest();
                     xhr.open(requestType, link, false);
-                    xhr.setRequestHeader("Content-Type", "application/json");
+                    if(body != null){
+                        xhr.setRequestHeader("Content-Type", "application/json");
+                    }
                     xhr.send(JSON.stringify(body));
                     var response = (xhr.responseText);
 
@@ -266,10 +307,9 @@
                  * Buys a specified item.
                  */
                 function buyItem(){
-                    //TODO: Implement
-                    // Send the Item ID as a url parameter.
-                    var productID = document.getElementById("itemID");
-                    var purchaseID = document.getElementById("purchaseID");
+                    // Send the Item ID as part of the body object.
+                    var productID = document.getElementById("itemID").value;
+                    var purchaseID = document.getElementById("purchaseID").value;
                     var body = {
                         "productID": productID,
                         "purchaseID": purchaseID
@@ -285,31 +325,54 @@
                 }
 
                 /**
-                 * Creates a P100 payment to a specified biller.
+                 * Creates a P100 payment to a specified biller, which in this case is Laguna Water.
+                 * The Biller is hardcoded because each different biller has its own specification
+                 * to follow.
                  */
                 function payBill(){
-                    //TODO: Get the Biller ID and create an object to send back to the server.
-                    billerID = document.getElementById("billerID")
+                    // var billerID = document.getElementById("billerID").value;
                     var body = {
-                        "billerID": billerID
+                        "billerID": "LAGUNAWATER"
                     }
-                    billerList.innerHTML = makeRequest('POST','http://localhost/payBill', body);
+                    var response = makeRequest('POST','http://localhost/payBill', body);
+                    paymentBillerID = JSON.parse(response).billPaymentId;
+                    billerList.innerHTML = response;
                 }
 
                 /**
-                 * Confirms an existing payment.
+                 * Confirms an existing payment to a biller.
                  */
                 function confirmPayment(){
-                    if(billerID == null){
-                        billerList.innerHTML  = "No Biller ID Selected."
+                    if(paymentBillerID == null){
+                        billerList.innerHTML  = "No Payment has been made to the specified Biller."
                         return;
                     }
                     var body = {
                         "type": "payment",
-                        "billerID":billerID
+                        "billerID":paymentBillerID
                     }
                     billerList.innerHTML = makeRequest('PUT', 'http://localhost/confirm', body);
 
+                }
+
+                /*
+                KYC SECTION
+                */
+
+                function getFields(){
+                    kycResponse.innerHTML = makeRequest('GET', 'http://localhost/getFields', null);
+                }
+
+                function uploadFile(){
+                    kycResponse.innerHTML = makeRequest('GET', 'http://localhost/uploadFile', null);
+                }
+
+                function submitApplication(){
+                    kycResponse.innerHTML = makeRequest('GET', 'http://localhost/submit', null);
+                }
+
+                function status(){
+                    kycResponse.innerHTML = makeRequest('GET', 'http://localhost/status', null);
                 }
         </script>
     </body>
