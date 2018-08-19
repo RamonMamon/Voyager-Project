@@ -10,11 +10,14 @@ const internalServerError = 500;
 const OK = 200;
 const NOTFOUND = 404;
 
+// The Client Credentials required for Base64 authentication.
 const client_id = "ramon-test";
 const client_secret = "Oox5bUpUKKtG07lWfQWztJgWB3wazc5Su8Mz1l3tKBqTn45ohzemH1wA5ZiHrb8iDiM3Q5Yso8cazz5ue5e2Tw";
 const base64Auth = base64.encode(client_id + ":" + client_secret);
 
 const redirect_uri = "http://localhost/callback";
+
+// These are the tokens which will be used to authenticate the client.
 var access_token;
 var refresh_token;
 
@@ -23,7 +26,6 @@ var kycSubmissionID;
 //These are static directories for the webpage to access.
 app.use(express.static(__dirname));
 app.use(bodyParser.json());
-// app.use(bodyParser.urlencoded({extended: true}));
 
 /**
  * Sends the index.html file to the client.
@@ -46,7 +48,7 @@ function refresh(){
 }
 
 /**
- * Authenticates the user and returns an access token.
+ * Authenticates the user and returns a response object containing the refresh and access tokens.
  * @param {*} code 
  * @param {*} params 
  */
@@ -63,6 +65,10 @@ function authenticate(code, params){
     return xhr;
 }
 
+/**
+ * This is the endpoint specified for the redirect_uri and will be used to
+ * retrieve all of the tokens required for authentication (Access and Refresh Tokens).
+ */
 app.get('/callback', function(req,res){
     res.sendFile(path.join(__dirname,'./index.html'));
 
@@ -92,16 +98,26 @@ app.get('/callback', function(req,res){
 });
 
 
+/**
+ * This Endpoint requests and returns the basic info of the user.
+ */
 app.get('/user', function(req, res){
     // Make the /user call of the PayMaya API retrieving the information of the user.
     makeRequest("GET","/profile", res, 'Profile_Request', null, false);
 });
 
+/**
+ * This Endpoint is used to retrieve the current balance of the user.
+ */
 app.get('/balance', function(req, res){
     // Make the /balance call and send the balance to the html file.
     makeRequest("GET","/balance", res, 'Balance_Request', null, false)
 });
 
+/**
+ * This Endpoint will initiate a request to transfer money to the specified User through
+ * his alias or phone number.
+ */
 app.post('/transfer', function(req,res){
     // Initiate the transfer of money.
     console.log('Received transfer request with the body: ');
@@ -120,7 +136,7 @@ app.post('/transfer', function(req,res){
             "value": amount
         },
         "note": note
-        }
+    }
 
     makeRequest('POST','/transfer', res, 'Transfer_Request', body, false);
 });
@@ -155,10 +171,16 @@ app.post('/cancel', function(req,res){
     makeRequest('DELETE',request, res, 'Transfer_Request', null, false);
 });
 
+/**
+ * Returns the products from the PayMaya Shop.
+ */
 app.get('/productCatalog', function(req,res){
     makeRequest('GET','/shop/products', res, 'Retrieve_Catalog', null, false);
 });
 
+/**
+ * Makes a purchase of a product from the shop.
+ */
 app.post('/purchase', function(req,res){
     var body = {
         "purchaseId": req.body.purchaseID,
@@ -176,7 +198,6 @@ app.get('/billers', function(req,res){
 // Makes a P100 payment to a biller.
 app.post('/payBill', function(req,res){
     var billerID = req.body.billerID
-    console.log(billerID)
     var body =  {
         "biller": billerID,
         "amount": {
@@ -203,13 +224,18 @@ app.get('/getFields',function(req,res){
 });
 
 app.get('/uploadFile',function(req,res){
+    //TODO:
     var body = {
-
+        "filename":"./testfile.txt"
     }
     makeRequest('POST','/kyc/upload', res, 'Upload_Docs', body, false);
 });
 
+/**
+ * Submits the required details for KYC1
+ */
 app.get('/submit', function(req,res){
+    //TODO:
     var body = {
 
     }
