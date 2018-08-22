@@ -9,6 +9,7 @@ const port = 80;
 const internalServerError = 500;
 const OK = 200;
 const NOTFOUND = 404;
+const BADREQUEST = 400;
 
 // The Client Credentials required for Base64 authentication.
 const client_id = "ramon-test";
@@ -87,7 +88,7 @@ app.get('/callback', function(req,res){
     console.log("Status " + status);
 
     //Returns the access token and refresh token for any requests related to the API.
-    if (status == 200 && response.access_token != null && response.refresh_token != null){
+    if (status == OK && response.access_token != null && response.refresh_token != null){
         access_token = response.access_token;
         refresh_token = response.refresh_token;
         console.log("\nThe Access token and Refresh token has been successfully retrieved.");
@@ -219,14 +220,19 @@ app.post('/payBill', function(req,res){
     makeRequest('POST','/billpayment', res, 'Init_billpayment', body, false);
 });
 
+/**
+ * Makes a request for the required fields for the specified profile.
+ */
 app.get('/getFields',function(req,res){
-    makeRequest('GET','/kyc/fields?profile=KYC1', res, 'Get_Fields', null, true);
+    // Change profile type when necessary.
+    var profile = "KYC1";
+    makeRequest('GET','/kyc/fields?profile=' + profile, res, 'Get_Fields', null, true);
 });
 
 app.get('/uploadFile',function(req,res){
-    //TODO:
+    //TODO: Not working.
     var body = {
-        "filename":"./testfile.txt"
+        "fileName":"./testfile.txt"
     }
     makeRequest('POST','/kyc/upload', res, 'Upload_Docs', body, false);
 });
@@ -235,9 +241,28 @@ app.get('/uploadFile',function(req,res){
  * Submits the required details for KYC1
  */
 app.get('/submit', function(req,res){
-    //TODO:
+    //TODO: Not working.
     var body = {
-
+        "work": {
+            "employmentDetail":"Interning at Voyager Innovations",
+            "governmentId": "./testfile.txt",
+            "incomeSource": "Parents",
+            "otherIncomeSource": "",
+            "workNature": "Intern"
+        },
+        "personal":{
+            "birthDate":"1999-03-19",
+            "birthPlace":"Manila",
+            "firstName":"Ramon",
+            "governmentIdImgLoc":"./testfile.txt",
+            "lastName":"Catane",
+            "middleName":"G",
+            "nationality":"PH"
+        },
+        "address":{
+            "permanentAddress":"Manila Philippines",
+            "presentAddress":"Manila Philippines"
+        }
     }
     makeRequest('POST','/kyc/KYC1', res, 'Submit_Details', body, false);
 })
@@ -303,7 +328,7 @@ function makeRequest(requestType, endpoint, res, requestNo, body, basicAuth){
 function missingAccTok(res){
     console.log("Access token is missing.");
     console.log("Please Authorize client before commiting an action");
-    res.status(400);
+    res.status(BADREQUEST);
     res.json("Action token is missing. Please Authorize client before commiting an action.");
 }
 

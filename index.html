@@ -12,7 +12,7 @@
         </h1>
         <div>
             <h3>
-                Authentication:
+                Authentication
             </h3>
             <button type="button" onclick="authenticate()"> 
                 Authenticate
@@ -22,7 +22,7 @@
             </button>
 
             <h3>
-                User Details Test:
+                User Details Test
             </h3>
 
             <button type="button" onclick="getUserDetails()">
@@ -47,7 +47,7 @@
 
         <div>
             <h3>
-                KYC Test:
+                KYC Test
             </h3>
 
             <button type="button" onclick="getFields()">
@@ -75,7 +75,7 @@
 
         <div>
             <h3>
-                Shop Test:
+                Shop Test
             </h3>
 
             Product ID:<br>
@@ -111,7 +111,7 @@
         <div>
 
             <h3>
-                Billing test:
+                Billing test
             </h3>
 
             <label>This test makes a payment to the biller, "Laguna Water", using the slug, "LAGUNAWATER".</label>
@@ -143,7 +143,7 @@
 
         <div>
                 <h3>
-                    Money Transfer Test:
+                    Money Transfer Test
                 </h3>
 
                 Phone Number/Alias:<br>
@@ -360,7 +360,10 @@
                 */
 
                 function getFields(){
-                    kycResponse.innerHTML = makeRequest('GET', 'http://localhost/getFields', null);
+                    var request = makeRequest('GET', 'http://localhost/getFields', null);
+                    var responseObject =  JSON.parse(request);
+                    console.log(responseObject);
+                    kycResponse.innerHTML = request;
                 }
 
                 function uploadFile(){
@@ -368,6 +371,7 @@
                 }
 
                 function submitApplication(){
+
                     kycResponse.innerHTML = makeRequest('GET', 'http://localhost/submit', null);
                 }
 
