@@ -1,9 +1,10 @@
-let express = require('express');
-let app = express();
-let bodyParser = require('body-parser');
-var path = require("path");
-let XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 let base64 = require("base-64");
+let bodyParser = require('body-parser');
+let express = require('express');
+let path = require("path");
+let XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+
+let app = express();
 
 const port = 80;
 const internalServerError = 500;
@@ -12,8 +13,8 @@ const NOTFOUND = 404;
 const BADREQUEST = 400;
 
 // The Client Credentials required for Base64 authentication.
-const client_id = "ramon-test";
-const client_secret = "Oox5bUpUKKtG07lWfQWztJgWB3wazc5Su8Mz1l3tKBqTn45ohzemH1wA5ZiHrb8iDiM3Q5Yso8cazz5ue5e2Tw";
+const client_id = "id";
+const client_secret = "secret";
 const base64Auth = base64.encode(client_id + ":" + client_secret);
 
 const redirect_uri = "http://localhost/callback";
@@ -34,7 +35,7 @@ app.use(bodyParser.json());
 app.get('/', function (req,res){
     console.log('Request Type: ', req.method);
     res.status(OK);
-    res.sendFile(path.join(__dirname,'./index.html'));
+    res.sendFile(path.join(__dirname,'./client.html'));
 
 });
 
@@ -50,8 +51,8 @@ function refresh(){
 
 /**
  * Authenticates the user and returns a response object containing the refresh and access tokens.
- * @param {*} code 
- * @param {*} params 
+ * @param {String} code The Authentication Code or the Refresh Token to be used to Authorize the use of the endpoints of the External API.
+ * @param {String} params Parameter with the urlencoded format which contains the action to be done with the specified code above.
  */
 function authenticate(code, params){
     var xhr = new XMLHttpRequest();
@@ -229,8 +230,12 @@ app.get('/getFields',function(req,res){
     makeRequest('GET','/kyc/fields?profile=' + profile, res, 'Get_Fields', null, true);
 });
 
+/**
+ * THIS IS CURRENTLY NOT WORKING
+ * 
+ * Uploads a file to a specified link for KYC
+ */
 app.get('/uploadFile',function(req,res){
-    //TODO: Not working.
     var body = {
         "fileName":"./testfile.txt"
     }
@@ -238,14 +243,15 @@ app.get('/uploadFile',function(req,res){
 });
 
 /**
+ * CURRENTLY NOT WORKING.
+ * 
  * Submits the required details for KYC1
  */
 app.get('/submit', function(req,res){
-    //TODO: Not working.
     var body = {
         "work": {
-            "employmentDetail":"Interning at Voyager Innovations",
-            "governmentId": "./testfile.txt",
+            "employmentDetail":"",
+            "governmentId": "",
             "incomeSource": "Parents",
             "otherIncomeSource": "",
             "workNature": "Intern"
